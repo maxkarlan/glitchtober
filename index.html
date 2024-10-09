@@ -16,7 +16,9 @@
   <body>
     <script>
       let x, y;
+      let angle;
       let radius = 10;
+      let speed = 5;
       let xSpeed, ySpeed;
       let noiseOffsetX = 0;
       let noiseOffsetY = 10000; // Different offset for X and Y for more variability
@@ -36,6 +38,7 @@
         background(0); // Black background initially
         x = random(width);
         y = random(height);
+        angle = random(TWO_PI);
 
         // Set initial random speeds
         xSpeed = random(-2, 2);
@@ -46,6 +49,24 @@
       }
 
       function draw() {
+
+        // Update position
+        x += cos(angle) * speed;
+        y += sin(angle) * speed;
+
+        // Check boundaries and bounce
+        if (x < radius || x > width - radius) {
+          angle = PI - angle;
+          x = constrain(x, radius, width - radius);
+        }
+        if (y < radius || y > height - radius) {
+          angle = -angle;
+          y = constrain(y, radius, height - radius);
+        }
+
+        // Add slight random variation to angle
+        angle += random(-0.1, 0.1);
+
         // Reset visited map each frame for dynamic island detection
         let visitedMap = createEmpty2DArray(width, height);
 
@@ -93,8 +114,8 @@
         x += xSpeed;
         y += ySpeed;
 
-        // Ensure the object bounces off the window boundaries
-        checkBoundaries();
+        // // Ensure the object bounces off the window boundaries
+        // checkBoundaries();
       }
 
       function createEmpty2DArray(w, h) {
