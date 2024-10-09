@@ -52,7 +52,7 @@
         // Set the stroke for the object (no fill)
         fill(0, 0, 100);
         stroke(0, 0, 0);
-        strokeWeight(2);
+        strokeWeight(1);
         ellipse(x, y, radius * 2); // Draw the red outlined object
 
         // Draw the continuous line and track it
@@ -219,10 +219,10 @@
 
       function floodFillGreen(fillCells) {
         // Turn only the specific enclosed area green
+        let randomBrightness = random(0, 100); // Random brightness for grayscale
         for (let i = 0; i < fillCells.length; i++) {
           let [cx, cy] = fillCells[i];
           paintMap[cx][cy] = 2; // 2 means green
-          let randomBrightness = random(0, 100); // Random brightness for grayscale
           set(cx, cy, color(0, 0, randomBrightness)); // Grayscale in HSB (0 Hue, 0 Saturation, random Brightness)
         }
 
