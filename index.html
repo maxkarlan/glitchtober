@@ -23,17 +23,44 @@
       let noiseOffsetX = 0;
       let noiseOffsetY = 10000; // Different offset for X and Y for more variability
       let time = 0;
+      let maxLineLength = 500; // Maximum number of points that should be visible
 
       let paintMap; // 2D array to track painted regions
       let islandCounter = 0; // Counter for islands formed
       let overlapDetected = false; // Track when the line overlaps a previously drawn area
 
       let continuousLine = [];
-      let minOverlapDistance = 20; // Minimum distance between points to detect an overlap
+      let minOverlapDistance = 2; // Minimum distance between points to detect an overlap
       let minOverlapDelay = 100; // Buffer: Number of points after which overlap can be checked
 
+      let brightnessUpdateInterval = 5; // Number of frames between each brightness change
+      let brightnessCounter = 0; // Counter to track frames
+      let currentBrightness = 100; // Initial brightness
+
+      // function setup() {
+      //   createCanvas(500, 500);
+      //   colorMode(HSB, 360, 100, 100); // Set color mode to HSB
+      //   background(0); // Black background initially
+      //   x = random(width);
+      //   y = random(height);
+      //   angle = random(TWO_PI);
+
+      //   // Set initial random speeds
+      //   xSpeed = random(-5, 5);
+      //   ySpeed = random(-5, 5);
+
+      //   // Initialize the 2D array for tracking painted areas
+      //   paintMap = createEmpty2DArray(width, height);
+      // }
+
       function setup() {
-        createCanvas(windowWidth, windowHeight);
+        updateCanvasSize(); // Set the initial canvas size
+      }
+
+      function updateCanvasSize() {
+        let canvasSize = .75 * min(windowWidth, windowHeight); // Use the smaller of the two dimensions
+        let canvas = createCanvas(canvasSize, canvasSize); // Create a square canvas
+        canvas.position((windowWidth - canvasSize) / 2, (windowHeight - canvasSize) / 2); // Center the canvas
         colorMode(HSB, 360, 100, 100); // Set color mode to HSB
         background(0); // Black background initially
         x = random(width);
@@ -41,82 +68,121 @@
         angle = random(TWO_PI);
 
         // Set initial random speeds
-        xSpeed = random(-2, 2);
-        ySpeed = random(-2, 2);
+        xSpeed = random(-5, 5);
+        ySpeed = random(-5, 5);
 
         // Initialize the 2D array for tracking painted areas
         paintMap = createEmpty2DArray(width, height);
       }
 
-      function draw() {
-
-        // Update position
-        x += cos(angle) * speed;
-        y += sin(angle) * speed;
-
-        // Check boundaries and bounce
-        if (x < radius || x > width - radius) {
-          angle = PI - angle;
-          x = constrain(x, radius, width - radius);
-        }
-        if (y < radius || y > height - radius) {
-          angle = -angle;
-          y = constrain(y, radius, height - radius);
-        }
-
-        // Add slight random variation to angle
-        angle += random(-0.1, 0.1);
-
-        // Reset visited map each frame for dynamic island detection
-        let visitedMap = createEmpty2DArray(width, height);
-
-        // Set the stroke for the object (no fill)
-        fill(0, 0, 100);
-        stroke(0, 0, 0);
-        strokeWeight(1);
-        ellipse(x, y, radius * 2); // Draw the red outlined object
-
-        // Draw the continuous line and track it
-        stroke(255); // White line
-        strokeWeight(5);
-        continuousLine.push([x, y]); // Track the path
-        if (continuousLine.length > 1) {
-          beginShape();
-          for (let i = 0; i < continuousLine.length; i++) {
-            vertex(continuousLine[i][0], continuousLine[i][1]);
-            markLineAsPainted(continuousLine[i][0], continuousLine[i][1]);
-          }
-          endShape();
-        }
-
-        // Check for overlap with previously painted points, but only if the line is long enough
-        overlapDetected = checkOverlap(x, y);
-        if (overlapDetected) {
-          console.log("Overlap detected! Checking for islands...");
-
-          // If overlap detected, check for enclosed black areas and turn islands green
-          dynamicIslandDetection(visitedMap);
-        }
-
-        // Use Perlin noise to create smooth curves in movement
-        let noiseX = map(noise(noiseOffsetX), 0, 1, -1, 1); // Adjust range to [-1, 1] for directional movement
-        let noiseY = map(noise(noiseOffsetY), 0, 1, -1, 1); // Different noise offsets for X and Y
-
-        // Increment noise offsets to create a smooth flowing motion
-        noiseOffsetX += 0.02; // Increased speed for faster curves
-        noiseOffsetY += 0.02;
-
-        // Apply the noise to the speed for smoother curved movement, modulated by the ebb and flow
-        xSpeed = noiseX * 10; // Increased multiplier for faster movement
-        ySpeed = noiseY * 10;
-
-        // Update the position based on the new velocity
-        x += xSpeed;
-        y += ySpeed;
-
-        // // Ensure the object bounces off the window boundaries
-        // checkBoundaries();
+      function windowResized() {
+        updateCanvasSize(); // Update the canvas size and position when the window is resized
+        background(0); // Reset the background to black when resizing
+        paintMap = createEmpty2DArray(width, height); // Reinitialize the paint map
       }
+
+      let pixelsNeedUpdate = false; // Flag to track if we need to update pixels
+
+      function draw() {
+  // Clear the previous frame to only draw the new state
+  background(0); // Clear the canvas with a black background
+
+  // Redraw the filled areas from the paintMap
+  fillCells();
+
+  // Update position
+  x += cos(angle) * speed;
+  y += sin(angle) * speed;
+
+  // Check boundaries and bounce
+  if (x < radius || x > width - radius) {
+    angle = PI - angle;
+    x = constrain(x, radius, width - radius);
+  }
+  if (y < radius || y > height - radius) {
+    angle = -angle;
+    y = constrain(y, radius, height - radius);
+  }
+
+  // Add slight random variation to angle
+  angle += random(-0.1, 0.1);
+
+  // Reset visited map each frame for dynamic island detection
+  let visitedMap = createEmpty2DArray(width, height);
+
+  continuousLine.push([x, y]); // Track the path
+
+  // Remove oldest points if the line exceeds the maximum length
+  if (continuousLine.length > maxLineLength) {
+    continuousLine.shift(); // Remove the oldest point
+  }
+
+  // Update brightness only every 'brightnessUpdateInterval' frames
+  if (brightnessCounter % brightnessUpdateInterval === 0) {
+    currentBrightness = random(0, 100); // Random brightness between 0 (black) and 100 (white)
+  }
+  brightnessCounter++; // Increment the frame counter
+
+  // Set the stroke for the object (no fill)
+  // let randomBrightness = random(0, 100); // Random brightness between 0 (black) and 100 (white)
+  fill(0, 0, currentBrightness); // Set grayscale fill (HSB mode: hue = 0, saturation = 0)
+  stroke(0, 0, 0);
+  strokeWeight(1);
+  ellipse(x, y, radius * 2); // Draw the red outlined object
+
+  // Draw the continuous line and track it
+  stroke(255); // White line
+  strokeWeight(5);
+
+  if (continuousLine.length > 1) {
+    beginShape();
+    for (let i = 0; i < continuousLine.length; i++) {
+      vertex(continuousLine[i][0], continuousLine[i][1]);
+      markLineAsPainted(continuousLine[i][0], continuousLine[i][1]);
+    }
+    endShape();
+  }
+
+  // Check for overlap with previously painted points, but only if the line is long enough
+  overlapDetected = checkOverlap(x, y);
+  if (overlapDetected) {
+    console.log("Overlap detected! Checking for islands...");
+
+    // If overlap detected, check for enclosed black areas and turn islands green
+    dynamicIslandDetection(visitedMap);
+  }
+
+  // Use Perlin noise to create smooth curves in movement
+  let noiseX = map(noise(noiseOffsetX), 0, 1, -1, 1); // Adjust range to [-1, 1] for directional movement
+  let noiseY = map(noise(noiseOffsetY), 0, 1, -1, 1); // Different noise offsets for X and Y
+
+  // Increment noise offsets to create a smooth flowing motion
+  noiseOffsetX += 0.04; // Increased speed for faster curves
+  noiseOffsetY += 0.04;
+
+  // Apply the noise to the speed for smoother curved movement, modulated by the ebb and flow
+  xSpeed = noiseX * 15; // Increased multiplier for faster movement
+  ySpeed = noiseY * 15;
+
+  // Update the position based on the new velocity
+  x += xSpeed;
+  y += ySpeed;
+}
+
+
+// Define fillCells function
+function fillCells() {
+  loadPixels(); // Load the pixel array
+  for (let i = 0; i < width; i++) {
+    for (let j = 0; j < height; j++) {
+      if (paintMap[i][j] === 3) {
+        let randomBrightness = random(0, 100);
+        set(i, j, color(0, 0, randomBrightness));
+      }
+    }
+  }
+  updatePixels(); // Apply the changes
+}
 
       function createEmpty2DArray(w, h) {
         let arr = [];
