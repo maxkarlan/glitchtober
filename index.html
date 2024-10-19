@@ -38,6 +38,7 @@
       let currentBrightness = 100; // Initial brightness
 
       let baseSpeed; // Variable to store speed proportional to window size
+      let previousCanvasSize;
 
       // function setup() {
       //   createCanvas(500, 500);
@@ -65,7 +66,27 @@
         canvas.position((windowWidth - canvasSize) / 2, (windowHeight - canvasSize) / 2); // Center the canvas
         colorMode(HSB, 360, 100, 100); // Set color mode to HSB
 
+        if (previousCanvasSize) {
+        // Compute the ratio of the new canvas size to the previous size
+        let resizeRatio = canvasSize / previousCanvasSize;
+
+        // Reproportion the animation's properties
+        x *= resizeRatio;
+        y *= resizeRatio;
+        xSpeed *= resizeRatio;
+        ySpeed *= resizeRatio;
+        radius *= resizeRatio;
+
+        // Re-scale the points in the continuousLine array
+        for (let i = 0; i < continuousLine.length; i++) {
+          continuousLine[i][0] *= resizeRatio;
+          continuousLine[i][1] *= resizeRatio;
+        }
+      }
+
+
         baseSpeed = canvasSize / 100; // Set the base speed proportional to the canvas size
+        previousCanvasSize = canvasSize; // Store the current canvas size for future reference
         resetAnimation(); // Reset the animation whenever the canvas is updated
 
 
@@ -108,6 +129,12 @@
       }
 
       let pixelsNeedUpdate = false; // Flag to track if we need to update pixels
+
+//       function windowResized() {
+//   // Call resizeCanvas to adjust the canvas size, but maintain continuity
+//   resizeCanvas(min(windowWidth, windowHeight), min(windowWidth, windowHeight));
+//   updateCanvasSize(); // Adjust all elements within the canvas after resizing
+// }
 
       function draw() {
   // Clear the previous frame to only draw the new state
@@ -342,11 +369,11 @@ function fillCells() {
         updatePixels(); // Apply the changes to the canvas
       }
 
-      function windowResized() {
-        resizeCanvas(windowWidth, windowHeight);
-        background(0); // Reset the background to black when resizing
-        paintMap = createEmpty2DArray(width, height); // Reinitialize the paint map
-      }
+      // function windowResized() {
+      //   resizeCanvas(windowWidth, windowHeight);
+      //   background(0); // Reset the background to black when resizing
+      //   paintMap = createEmpty2DArray(width, height); // Reinitialize the paint map
+      // }
     </script>
   </body>
 </html>
