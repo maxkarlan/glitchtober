@@ -37,6 +37,8 @@
       let brightnessCounter = 0; // Counter to track frames
       let currentBrightness = 100; // Initial brightness
 
+      let baseSpeed; // Variable to store speed proportional to window size
+
       // function setup() {
       //   createCanvas(500, 500);
       //   colorMode(HSB, 360, 100, 100); // Set color mode to HSB
@@ -62,17 +64,41 @@
         let canvas = createCanvas(canvasSize, canvasSize); // Create a square canvas
         canvas.position((windowWidth - canvasSize) / 2, (windowHeight - canvasSize) / 2); // Center the canvas
         colorMode(HSB, 360, 100, 100); // Set color mode to HSB
-        background(0); // Black background initially
+
+        baseSpeed = canvasSize / 100; // Set the base speed proportional to the canvas size
+        resetAnimation(); // Reset the animation whenever the canvas is updated
+
+
+        // background(0); // Black background initially
+        // x = random(width);
+        // y = random(height);
+        // angle = random(TWO_PI);
+
+        // // Set initial random speeds
+        // xSpeed = random(-5, 5);
+        // ySpeed = random(-5, 5);
+
+        // // Initialize the 2D array for tracking painted areas
+        // paintMap = createEmpty2DArray(width, height);
+      }
+
+      function resetAnimation() {
+        background(0); // Clear the background
         x = random(width);
         y = random(height);
         angle = random(TWO_PI);
 
-        // Set initial random speeds
-        xSpeed = random(-5, 5);
-        ySpeed = random(-5, 5);
+        // Set initial random speeds proportional to the canvas size
+        xSpeed = random(-baseSpeed, baseSpeed);
+        ySpeed = random(-baseSpeed, baseSpeed);
 
-        // Initialize the 2D array for tracking painted areas
+        // Reinitialize the 2D array for tracking painted areas
         paintMap = createEmpty2DArray(width, height);
+
+        // Reset the continuous line array
+        continuousLine = [];
+        islandCounter = 0;
+        overlapDetected = false;
       }
 
       function windowResized() {
@@ -91,8 +117,8 @@
   fillCells();
 
   // Update position
-  x += cos(angle) * speed;
-  y += sin(angle) * speed;
+  x += cos(angle) * baseSpeed;
+  y += sin(angle) * baseSpeed;
 
   // Check boundaries and bounce
   if (x < radius || x > width - radius) {
