@@ -35,26 +35,10 @@
 
       let brightnessUpdateInterval = 5; // Number of frames between each brightness change
       let brightnessCounter = 0; // Counter to track frames
-      let currentBrightness = 100; // Initial brightness
+      let currentSaturation = 100; // Initial brightness
 
       let baseSpeed; // Variable to store speed proportional to window size
       let previousCanvasSize;
-
-      // function setup() {
-      //   createCanvas(500, 500);
-      //   colorMode(HSB, 360, 100, 100); // Set color mode to HSB
-      //   background(0); // Black background initially
-      //   x = random(width);
-      //   y = random(height);
-      //   angle = random(TWO_PI);
-
-      //   // Set initial random speeds
-      //   xSpeed = random(-5, 5);
-      //   ySpeed = random(-5, 5);
-
-      //   // Initialize the 2D array for tracking painted areas
-      //   paintMap = createEmpty2DArray(width, height);
-      // }
 
       function setup() {
         updateCanvasSize(); // Set the initial canvas size
@@ -84,27 +68,13 @@
         }
       }
 
-
         baseSpeed = canvasSize / 100; // Set the base speed proportional to the canvas size
         previousCanvasSize = canvasSize; // Store the current canvas size for future reference
         resetAnimation(); // Reset the animation whenever the canvas is updated
-
-
-        // background(0); // Black background initially
-        // x = random(width);
-        // y = random(height);
-        // angle = random(TWO_PI);
-
-        // // Set initial random speeds
-        // xSpeed = random(-5, 5);
-        // ySpeed = random(-5, 5);
-
-        // // Initialize the 2D array for tracking painted areas
-        // paintMap = createEmpty2DArray(width, height);
       }
 
       function resetAnimation() {
-        background(90, 90); // Clear the background
+        background(0, 0, 0); // Clear the background
         x = random(width);
         y = random(height);
         angle = random(TWO_PI);
@@ -130,33 +100,27 @@
 
       let pixelsNeedUpdate = false; // Flag to track if we need to update pixels
 
-//       function windowResized() {
-//   // Call resizeCanvas to adjust the canvas size, but maintain continuity
-//   resizeCanvas(min(windowWidth, windowHeight), min(windowWidth, windowHeight));
-//   updateCanvasSize(); // Adjust all elements within the canvas after resizing
-// }
-
       function draw() {
-  // Clear the previous frame to only draw the new state
-  background(90, 90); // Clear the canvas with a black background
+        // Clear the previous frame to only draw the new state
+        background(0,0); // Clear the canvas with a black background
 
-  // Redraw the filled areas from the paintMap
-  fillCells();
-  fadePaintMap(); // Gradually fade out the painted areas
+        // Redraw the filled areas from the paintMap
+        fillCells();
+        fadePaintMap(); // Gradually fade out the painted areas
 
-  // Update position
-  x += cos(angle) * baseSpeed;
-  y += sin(angle) * baseSpeed;
+        // Update position
+        x += cos(angle) * baseSpeed;
+        y += sin(angle) * baseSpeed;
 
-  // Check boundaries and bounce
-  if (x < radius || x > width - radius) {
-    angle = PI - angle;
-    x = constrain(x, radius, width - radius);
-  }
-  if (y < radius || y > height - radius) {
-    angle = -angle;
-    y = constrain(y, radius, height - radius);
-  }
+        // Check boundaries and bounce
+        if (x < radius || x > width - radius) {
+          angle = PI - angle;
+          x = constrain(x, radius, width - radius);
+        }
+        if (y < radius || y > height - radius) {
+          angle = -angle;
+          y = constrain(y, radius, height - radius);
+        }
 
   // Add slight random variation to angle
   angle += random(-0.1, 0.1);
@@ -172,7 +136,7 @@
   }
 
 // Draw the continuous line and noise around it
-stroke(0); // White line
+stroke(0); // black line
   strokeWeight(5);
 
   if (continuousLine.length > 1) {
@@ -199,19 +163,17 @@ stroke(0); // White line
 
   // Update brightness only every 'brightnessUpdateInterval' frames
   if (brightnessCounter % brightnessUpdateInterval === 0) {
-    currentBrightness = random(0, 100); // Random brightness between 0 (black) and 100 (white)
+    currentSaturation = random(0, 100); // Random brightness between 0 (black) and 100 (white)
   }
   brightnessCounter++; // Increment the frame counter
 
   // Set the stroke for the object (no fill)
-  // let randomBrightness = random(0, 100); // Random brightness between 0 (black) and 100 (white)
-  fill(0, 0, currentBrightness); // Set grayscale fill (HSB mode: hue = 0, saturation = 0)
+  fill(0, currentSaturation, 100); // Set grayscale fill (HSB mode: hue = 0, saturation = 0)
   stroke(0, 0, 0);
   strokeWeight(1);
-  // ellipse(x, y, radius * 2); // Draw the red outlined object
 
   // Draw the continuous line and track it
-  stroke(0); // White line
+  stroke(0); // black line
   strokeWeight(5);
 
   if (continuousLine.length > 1) {
@@ -228,7 +190,6 @@ stroke(0); // White line
   if (overlapDetected) {
     console.log("Overlap detected! Checking for islands...");
 
-    // If overlap detected, check for enclosed black areas and turn islands green
     dynamicIslandDetection(visitedMap);
   }
 
@@ -352,7 +313,7 @@ function fillCells() {
               let fillCells = [];
               let enclosed = floodFillCheck(i, j, visitedMap, fillCells);
               if (enclosed) {
-                // If the black region is enclosed, turn only that region green
+                // If the black region is enclosed, turn only that region grayscale
                 floodFillGrayscale(fillCells);
                 islandCounter++;
                 console.log("New island formed! Total islands: " + islandCounter);
@@ -375,7 +336,7 @@ function fillCells() {
             // Mark as visited
             visitedMap[cx][cy] = 1;
 
-            // Store cell to potentially fill with green later
+            // Store cell to potentially fill with gray later
             fillCells.push([cx, cy]);
 
             // Check if this black region can escape (i.e., reach the boundary)
@@ -398,7 +359,7 @@ function fillCells() {
 
       function floodFillGrayscale(fillCells) {
   // Grayscale fill, with random brightness for each pixel in the enclosed area
-  let randomBrightness = random(0, 100); // Random brightness for grayscale
+  let randomSaturation = random(0, 100); // Random brightness for grayscale
   
   // Store all points to fill more than once
   let extendedFillCells = [...fillCells];
@@ -407,7 +368,7 @@ function fillCells() {
   for (let i = 0; i < fillCells.length; i++) {
     let [cx, cy] = fillCells[i];
     paintMap[cx][cy] = 2; // Mark as filled
-    set(cx, cy, color(0, 0, randomBrightness)); // Set grayscale color
+    set(cx, cy, color(0, randomSaturation, 100)); // Set grayscale color
   }
 
   // Add more points around the existing ones to fill larger areas
@@ -434,8 +395,8 @@ function fillCells() {
   // Apply the grayscale to extended filled areas
   for (let i = 0; i < extendedFillCells.length; i++) {
     let [cx, cy] = extendedFillCells[i];
-    let randomBrightness = random(0, 100); // Randomize brightness for more glitchy effect
-    set(cx, cy, color(0, 0, randomBrightness));
+    let randomSaturation = random(0, 100); // Randomize brightness for more glitchy effect
+    set(cx, cy, color(0, randomSaturation, 100));
   }
 
   // Ensure the pixels persist for longer by updating them slowly
@@ -446,13 +407,6 @@ function fillCells() {
     updatePixels(); // Refresh after a delay to allow the grayscale to linger
   }, 5000); // Adjust this delay to make them stay longer
 }
-
-
-      // function windowResized() {
-      //   resizeCanvas(windowWidth, windowHeight);
-      //   background(0); // Reset the background to black when resizing
-      //   paintMap = createEmpty2DArray(width, height); // Reinitialize the paint map
-      // }
     </script>
   </body>
 </html>
